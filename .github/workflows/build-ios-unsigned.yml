@@ -27,6 +27,13 @@ jobs:
             rm -rf qned_remote_tmp
           fi
 
+      - name: Disable Xcode Code Signing Requirement
+        run: |
+          echo "CODE_SIGNING_ALLOWED=NO" >> qned_remote/ios/Flutter/Release.xcconfig
+          echo "CODE_SIGNING_REQUIRED=NO" >> qned_remote/ios/Flutter/Release.xcconfig
+          echo "CODE_SIGN_IDENTITY=" >> qned_remote/ios/Flutter/Release.xcconfig
+          sed -i '' 's/CODE_SIGNING_REQUIRED = YES/CODE_SIGNING_REQUIRED = NO/g' qned_remote/ios/Runner.xcodeproj/project.pbxproj || true
+
       - name: Install dependencies
         working-directory: qned_remote
         run: flutter pub get
