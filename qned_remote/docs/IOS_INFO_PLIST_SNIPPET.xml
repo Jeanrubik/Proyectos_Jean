@@ -1,0 +1,10 @@
+<!-- Add these keys inside ios/Runner/Info.plist after running `flutter create .` -->
+<key>NSLocalNetworkUsageDescription</key>
+<string>QNED Remote necesita acceder a tu red local para controlar tu TV LG.</string>
+
+<!-- webOS usually exposes its first control socket over plain local WebSocket. -->
+<key>NSAppTransportSecurity</key>
+<dict>
+    <key>NSAllowsArbitraryLoads</key>
+    <true/>
+</dict>

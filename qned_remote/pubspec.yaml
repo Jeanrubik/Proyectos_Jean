@@ -1,0 +1,23 @@
+name: qned_remote
+
+description: Remote control for LG 50QNED80TSA (webOS 24) over the local Wi-Fi network.
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.9.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  web_socket_channel: ^3.0.3
+  flutter_secure_storage: ^11.2.0
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
