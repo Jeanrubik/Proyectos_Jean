@@ -454,7 +454,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
                   width: 110,
                   child: OutlinedButton.icon(
                     onPressed: () => setState(() => _showTouchpad = !_showTouchpad),
-                    icon: Icon(_showTouchpad ? Icons.mouse_outlined : Icons.mouse_off_outlined),
+                    icon: Icon(_showTouchpad ? Icons.mouse_outlined : Icons.mouse),
                     label: Text(_showTouchpad ? 'Cursor' : 'Pad'),
                   ),
                 ),
