@@ -43,8 +43,6 @@ class LgWebOsService {
 
   final _pending = <String, Completer<Map<String, dynamic>>>{};
   Completer<String?>? _registrationCompleter;
-  Completer<void>? _helloCompleter;
-  Completer<void>? _preRegSystemCompleter;
   int _requestCounter = 0;
   bool _registered = false;
 
@@ -71,15 +69,14 @@ class LgWebOsService {
         _failRegistration(LgWebOsException('El TV cerró la conexión.'));
         _failPending(LgWebOsException('Conexión con el TV cerrada.'));
         _registered = false;
-    _helloCompleter = null;
-    _preRegSystemCompleter = null;
       },
       cancelOnError: false,
     );
 
     try {
-      await _prepareHandshake();
-      await _sendRegister(savedClientKey);
+      // Enviamos el registro DIRECTAMENTE (webOS ignora comandos antes de registrarse)
+      await _sendRegister(savedClientKey ?? clientKey);
+      
       final key = await _registrationCompleter!.future.timeout(
         const Duration(seconds: 90),
         onTimeout: () => throw LgWebOsException(
@@ -104,12 +101,12 @@ class LgWebOsService {
   Future<IOWebSocketChannel> _connectMain(String ip) async {
     Future<IOWebSocketChannel> open(Uri uri) async {
       final client = HttpClient()
-        ..connectionTimeout = const Duration(seconds: 8)
+        ..connectionTimeout = const Duration(seconds: 5)
         ..badCertificateCallback = (cert, host, port) => true;
       final channel = IOWebSocketChannel.connect(
         uri,
         customClient: client,
-        connectTimeout: const Duration(seconds: 8),
+        connectTimeout: const Duration(seconds: 5),
         pingInterval: const Duration(seconds: 20),
       );
       await channel.ready;
@@ -123,32 +120,10 @@ class LgWebOsService {
     }
   }
 
-  Future<void> _prepareHandshake() async {
-    _helloCompleter = Completer<void>();
-    _preRegSystemCompleter = Completer<void>();
-
-    _main!.sink.add(jsonEncode({
-      'id': 'hello',
-      'type': 'hello',
-      'payload': <String, dynamic>{},
-    }));
-    await _helloCompleter!.future.timeout(const Duration(seconds: 8));
-
-    _main!.sink.add(jsonEncode({
-      'id': 'get_sys_info',
-      'type': 'request',
-      'uri': 'ssap://system/getSystemInfo',
-      'payload': <String, dynamic>{},
-    }));
-    await _preRegSystemCompleter!.future.timeout(const Duration(seconds: 8));
-  }
-
   Future<void> _sendRegister(String? key) async {
     final manifest = <String, dynamic>{
       'manifestVersion': 1,
       'appVersion': '1.0.0',
-      // Current firmware versions have been accepting the generic permission
-      // block. It intentionally avoids pretending to be LG's signed app.
       'permissions': _permissions,
     };
 
@@ -160,8 +135,6 @@ class LgWebOsService {
         'pairingType': 'PROMPT',
         'client-key': key,
         'manifest': manifest,
-        // Some newer firmware revisions expect the user-approved permissions
-        // in the outer payload as well.
         'permissions': _permissions,
       },
     };
@@ -184,23 +157,9 @@ class LgWebOsService {
     final id = data['id']?.toString();
     final payload = data['payload'];
 
-    if (type == 'hello' && id == 'hello') {
-      if (!(_helloCompleter?.isCompleted ?? true)) {
-        _helloCompleter!.complete();
-      }
-      return;
-    }
-
-    if (id == 'get_sys_info') {
-      if (!(_preRegSystemCompleter?.isCompleted ?? true)) {
-        _preRegSystemCompleter!.complete();
-      }
-      return;
-    }
-
     if (id == 'register_0') {
       if (type == 'response' && payload is Map && payload['pairingType'] == 'PROMPT') {
-        // The TV is waiting for the user to approve the connection.
+        // La TV está desplegando el aviso en pantalla para que el usuario acepte
         return;
       }
       if (type == 'registered' && payload is Map) {
@@ -365,7 +324,7 @@ class LgWebOsService {
       if (wifi is Map) learnedWifiMac = wifi['macAddress']?.toString();
       if (wired is Map) learnedWiredMac = wired['macAddress']?.toString();
     } catch (_) {
-      // Not all firmware exposes this command to third-party clients.
+      // No todos los firmwares exponen esto a apps no firmadas
     }
   }
 
