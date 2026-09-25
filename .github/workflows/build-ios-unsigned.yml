@@ -31,14 +31,22 @@ jobs:
         working-directory: qned_remote
         run: flutter pub get
 
-      - name: Build unsigned IPA
+      - name: Build iOS App Bundle
         working-directory: qned_remote
-        run: flutter build ipa --release --no-codesign
+        run: flutter build ios --release --no-codesign
+
+      - name: Package IPA
+        working-directory: qned_remote
+        run: |
+          mkdir -p build/ios/ipa/Payload
+          cp -R build/ios/iphoneos/Runner.app build/ios/ipa/Payload/
+          cd build/ios/ipa
+          zip -r qned_remote.ipa Payload
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
           name: qned-remote-ios-unsigned
-          path: qned_remote/build/ios/ipa/*.ipa
+          path: qned_remote/build/ios/ipa/qned_remote.ipa
           if-no-files-found: error
           retention-days: 7
