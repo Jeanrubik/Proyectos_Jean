@@ -1,1 +1,44 @@
+name: Build iOS IPA unsigned
 
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Generate iOS folder if missing
+        run: |
+          if [ ! -d "qned_remote/ios" ]; then
+            flutter create --platforms=ios --org com.jeancarlos qned_remote_tmp
+            cp -R qned_remote_tmp/ios qned_remote/
+            rm -rf qned_remote_tmp
+          fi
+
+      - name: Install dependencies
+        working-directory: qned_remote
+        run: flutter pub get
+
+      - name: Build unsigned IPA
+        working-directory: qned_remote
+        run: flutter build ipa --release --no-codesign
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: qned-remote-ios-unsigned
+          path: qned_remote/build/ios/ipa/*.ipa
+          if-no-files-found: error
+          retention-days: 7
