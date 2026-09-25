@@ -161,7 +161,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
     }
   }
 
-  Future<void> _volume(bool up) async {
+  Future<void> _changeVolume(bool up) async {
     if (!_connected) return;
     try {
       if (up) {
@@ -460,7 +460,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _roundButton(Icons.remove, _connected ? () => _volume(false) : null, size: 56),
+                _roundButton(Icons.remove, _connected ? () => _changeVolume(false) : null, size: 56),
                 const SizedBox(width: 18),
                 SizedBox(
                   width: 110,
@@ -471,7 +471,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
                   ),
                 ),
                 const SizedBox(width: 18),
-                _roundButton(Icons.add, _connected ? () => _volume(true) : null, size: 56),
+                _roundButton(Icons.add, _connected ? () => _changeVolume(true) : null, size: 56),
               ],
             ),
             const SizedBox(height: 14),
