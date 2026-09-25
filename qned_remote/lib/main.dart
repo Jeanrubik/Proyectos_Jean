@@ -102,19 +102,27 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
         _macController.text = knownMacs.first;
       }
 
-      _connected = true;
-      _powerState = await _service.getPowerState();
-      _volume = await _service.getVolume();
-      _status = 'Conectado';
-
-      // The service exposes the current client key after successful pairing.
+      final power = await _service.getPowerState();
+      final vol = await _service.getVolume();
       final newKey = _service.clientKey;
+
       if (newKey != null) {
         await _storage.write(key: _clientKey, value: newKey);
       }
+
+      if (!mounted) return;
+      setState(() {
+        _connected = true;
+        _powerState = power;
+        _volume = vol;
+        _status = 'Conectado';
+      });
     } catch (e) {
-      _connected = false;
-      _status = 'No se pudo conectar';
+      if (!mounted) return;
+      setState(() {
+        _connected = false;
+        _status = 'No se pudo conectar';
+      });
       _toast(e.toString().replaceFirst('LgWebOsException: ', ''));
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -171,9 +179,13 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
   Future<void> _toggleMute() async {
     if (!_connected) return;
     try {
-      _muted = !_muted;
-      await _service.mute(_muted);
-      if (mounted) setState(() {});
+      final targetMute = !_muted;
+      await _service.mute(targetMute);
+      if (mounted) {
+        setState(() {
+          _muted = targetMute;
+        });
+      }
     } catch (e) {
       _toast(e.toString().replaceFirst('LgWebOsException: ', ''));
     }
@@ -494,7 +506,7 @@ class _RemoteHomePageState extends State<RemoteHomePage> {
             ),
             const SizedBox(height: 6),
             const Text(
-              'El iPhone y el TV deben estar en la misma red Wi‑Fi. El primer uso solicita autorización en la pantalla del TV.',
+              'El dispositivo móvil y el TV deben estar en la misma red Wi‑Fi. El primer uso solicita autorización en la pantalla del TV.',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.white30, fontSize: 11),
             ),
