@@ -27,26 +27,34 @@ jobs:
             rm -rf qned_remote_tmp
           fi
 
-      - name: Disable Xcode Code Signing Requirement
-        run: |
-          echo "CODE_SIGNING_ALLOWED=NO" >> qned_remote/ios/Flutter/Release.xcconfig
-          echo "CODE_SIGNING_REQUIRED=NO" >> qned_remote/ios/Flutter/Release.xcconfig
-          echo "CODE_SIGN_IDENTITY=" >> qned_remote/ios/Flutter/Release.xcconfig
-          sed -i '' 's/CODE_SIGNING_REQUIRED = YES/CODE_SIGNING_REQUIRED = NO/g' qned_remote/ios/Runner.xcodeproj/project.pbxproj || true
-
       - name: Install dependencies
         working-directory: qned_remote
         run: flutter pub get
 
-      - name: Build iOS App Bundle
+      - name: Prepare Flutter iOS build files
         working-directory: qned_remote
-        run: flutter build ios --release --no-codesign
+        run: flutter build ios --release --no-codesign --config-only
+
+      - name: Compile Xcode project forcing no code sign
+        working-directory: qned_remote/ios
+        run: |
+          xcodebuild -workspace Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath ../build_xcode \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES \
+            DEVELOPMENT_TEAM="" \
+            build
 
       - name: Package IPA
         working-directory: qned_remote
         run: |
           mkdir -p build/ios/ipa/Payload
-          cp -R build/ios/iphoneos/Runner.app build/ios/ipa/Payload/
+          cp -R build_xcode/Build/Products/Release-iphoneos/Runner.app build/ios/ipa/Payload/
           cd build/ios/ipa
           zip -r qned_remote.ipa Payload
 
